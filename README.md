@@ -1,6 +1,29 @@
 # InnoDBOptimizationTree
 Mysql InnoDB存储引擎性能调优
 
+<pre>
+update
+      InnoDB内部的流程：
+          1）将数据读入innodb_buffer_pool，并对相关记录加独占锁。
+          2）将undo信息写入undo表空间的回滚段中。
+          3）更改缓存页中的数据，并将更新记录写入redo buffer中；
+          5）提交时，根据 innodb_flush_log_at_trx_commit的设置，用不同的方式将
+             redo buffer中的更新记录刷新到innodb_redo_log_file中，然后释放独占锁。
+          6）最后，后台线程根据需要择机将缓存中更新过的数据刷新到磁盘文件中。
+
+      ---
+	  LOG
+	  ---
+	  Log sequence number 1708635750      // 上次数据页的修改，还没有刷新到日志文件的lsn号
+	  Log flushed up to   1708635750      // 上次成功操作，已经刷新到日志文件中的lsn号
+	  Pages flushed up to 1708635750
+	  Last checkpoint at  1708635741      // 上次检查点成功完成时的lsn号，以为着恢复的起点
+
+      其中 lsn(log sequence number) 称为日志序列号,它实际上对应日志文件的偏移量，
+      其生成公式是： 
+                 新的 lsn = 旧的 lsn + 写入的日志大小
+</pre>
+
 
 <pre>
 InnoDB Buffer Pool
